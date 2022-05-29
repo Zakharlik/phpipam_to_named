@@ -8,6 +8,7 @@ host_dict = {}
 data_dir = 'data'
 zones_dir = 'zones'
 out_dir = 'zones'
+conf_dir = 'data'
 
 def push_dict(host_dict, net, host, name):
     if host_dict.get(net) != None:
@@ -88,8 +89,20 @@ def make_zones(host_dict):
                 w.write(f'{host}	IN	PTR	{name + "."}\n')
 
 
+def make_reverse_conf(conf_dir, rzones_dir):
+    files = os.listdir(rzones_dir)
+    with open(os.path.join(conf_dir, 'reverse'), 'w') as w:
+        for filename in files:
+            print(filename)
+            reverse_name = '.'.join(reversed(filename.split('.')[:3]))
+            w.write(f'zone "{reverse_name}.in-addr.arpa" {{\n'
+                    f'        type master;\n'
+                    f'        file "reverse/{filename}";\n'
+                    f'}};\n\n')
+
 if __name__ == '__main__':
     host_dict = get_zones(host_dict, zones_dir)
     host_dict = get_csv(host_dict)
 
     make_zones(host_dict)
+    make_reverse_conf(conf_dir, zones_dir)
