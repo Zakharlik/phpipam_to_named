@@ -5,10 +5,12 @@ import datetime
 
 host_dict = {}
 
-data_dir = 'data'
-zones_dir = 'zones'
-out_dir = 'zones'
-conf_dir = 'data'
+cvs_file = 'data/allip.csv'
+zones_dir = 'data/zones'
+reverse_zones_dir = 'data/zones/reverse'
+conf_dir = 'data/config'
+
+
 # todo: Make near real file structure
 
 # TODO: Make forward zone
@@ -21,35 +23,31 @@ def push_dict(host_dict, net, host, name):
     return host_dict
 
 
-def get_reverse_zones(host_dict, file):
-    net = re.search(r'\\(\S*)\.zone', file).group(1)
-    with open(file,'r') as f:
-        for line in f:
-            if re.search('^\d',line):
-                host, _, _, name = line.split()
-                host_dict = push_dict(host_dict, net, host, name)
-    return host_dict
-
-
-def get_zone(host_dict, file):
-    netl = ['','','']
-    with open(file, 'r') as f:
-        for line in f:
-            if re.search(r'^[a-zA-Z]', line):
-                name, _, _, ip = line.split()
-                netl[0], netl[1], netl[2], host = ip.split('.')
-                net = '.'.join(netl)
-                host_dict = push_dict(host_dict, net, host, name)
+def get_reverse_zones(host_dict, dir):
+    files = os.listdir(dir)
+    for file in files:
+        if re.search(r"^\d.*\.zone$", file):
+            net = re.search(r'\\(\S*)\.zone', file).group(1)
+            with open(os.path.join(dir,file),'r') as f:
+                for line in f:
+                    if re.search('^\d',line):
+                        host, _, _, name = line.split()
+                        host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
 
 def get_zones(host_dict, dir):
     files = os.listdir(dir)
     for file in files:
-        if re.search(r"^\d.*\.zone$", file):
-            host_dict = get_reverse_zones(host_dict, os.path.join(dir, file))
-        elif re.search(r".*\.zone$", file):
-            host_dict = get_zone(host_dict, os.path.join(dir, file))
+        if re.search(r".*\.zone$", file):
+            netl = ['','','']
+            with open(os.path.join(dir,file), 'r') as f:
+                for line in f:
+                    if re.search(r'^[a-zA-Z]', line):
+                        name, _, _, ip = line.split()
+                        netl[0], netl[1], netl[2], host = ip.split('.')
+                        net = '.'.join(netl)
+                        host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
 
@@ -57,7 +55,7 @@ def get_csv(host_dict):
     # TODO: make check for non latin characters
     # TODO: make check for bad characters such as / _ ( etc.
 
-    with open('data/allip.csv', 'r', encoding='cp1251') as r:
+    with open(cvs_file, 'r', encoding='cp1251') as r:
         for line in r:
             net, host, _, _, name, *_ = line.split(';')
             host_dict = push_dict(host_dict, net, host, name)
@@ -67,7 +65,7 @@ def get_csv(host_dict):
 def make_zones(host_dict):
     for zone in host_dict:
         ver = 1
-        filename = os.path.join(out_dir, zone + '.zone')
+        filename = os.path.join(reverse_zones_dir, zone + '.zone')
         if os.path.exists(filename):
             with open(filename, 'r') as r:
                 for line in r:
@@ -118,9 +116,11 @@ def make_reverse_conf_secondary(conf_dir, rzones_dir):
                     f'}};\n\n')
 
 if __name__ == '__main__':
+    host_dict = get_reverse_zones(host_dict, reverse_zones_dir)
     host_dict = get_zones(host_dict, zones_dir)
+
     host_dict = get_csv(host_dict)
 
     make_zones(host_dict)
-    make_reverse_conf(conf_dir, zones_dir)
-    make_reverse_conf_secondary(conf_dir, zones_dir)
+    make_reverse_conf(conf_dir, reverse_zones_dir)
+    make_reverse_conf_secondary(conf_dir, reverse_zones_dir)
