@@ -1,18 +1,19 @@
 #!/usr/bin/python3
 import os
 import re
+import datetime
 
 host_dict = {}
 
 data_dir = 'data'
 zones_dir = 'zones'
-out_dir = 'out'
+out_dir = 'zones'
 
 def push_dict(host_dict, net, host, name):
     if host_dict.get(net) != None:
-        host_dict[net].append((host, name))
+        host_dict[net].append((host, name.strip('.')))
     else:
-        host_dict[net] = [(host, name)]
+        host_dict[net] = [(host, name.strip('.'))]
     return host_dict
 
 
@@ -23,7 +24,6 @@ def get_reverse_zones(host_dict, file):
             if re.search('^\d',line):
                 host, _, _, name = line.split()
                 host_dict = push_dict(host_dict, net, host, name)
-    print(host_dict)
     return host_dict
 
 
@@ -36,7 +36,6 @@ def get_zone(host_dict, file):
                 netl[0], netl[1], netl[2], host = ip.split('.')
                 net = '.'.join(netl)
                 host_dict = push_dict(host_dict, net, host, name)
-    print(host_dict)
     return host_dict
 
 
@@ -59,11 +58,37 @@ def get_csv(host_dict):
 
 
 def make_zones(host_dict):
-    pass
+    for zone in host_dict:
+        ver = 1
+        filename = os.path.join(out_dir, zone + '.zone')
+        if os.path.exists(filename):
+            with open(filename, 'r') as r:
+                for line in r:
+                    version = re.search(r'(\d+).*serial', line)
+                    if version:
+                        version = version.group(1)
+                        if version[:8] == datetime.datetime.now().strftime('%Y%m%d'):
+                            ver = int(version[8:])+1
+                        break
+
+        version = '{}{:0>2}'.format(datetime.datetime.now().strftime('%Y%m%d'), ver)
+        with open(filename, 'w') as w:
+            w.write(f'$TTL 3H\n' \
+                    f'@	IN SOA	@ ns1.ats. (\n' \
+                    f'					{version}	; serial\n' \
+                    f'					1D	; refresh\n' \
+                    f'					1H	; retry\n' \
+                    f'					1W	; expire\n' \
+                    f'					3H )	; minimum\n' \
+                    f'@		IN	NS	ns1.ats.\n' \
+                    f')\n')
+            for host, name in host_dict[zone]:
+                w.write(f'{host}	IN	PTR	{name + "."}\n')
+
+
 
 if __name__ == '__main__':
     host_dict = get_zones(host_dict, zones_dir)
     host_dict = get_csv(host_dict)
 
     make_zones(host_dict)
-    print(host_dict)
