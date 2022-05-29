@@ -11,9 +11,9 @@ out_dir = 'zones'
 
 def push_dict(host_dict, net, host, name):
     if host_dict.get(net) != None:
-        host_dict[net].append((host, name.strip('.')))
+        host_dict[net].add((host, name.strip('.')))
     else:
-        host_dict[net] = [(host, name.strip('.'))]
+        host_dict[net] = {(host, name.strip('.'))}
     return host_dict
 
 
@@ -73,18 +73,19 @@ def make_zones(host_dict):
 
         version = '{}{:0>2}'.format(datetime.datetime.now().strftime('%Y%m%d'), ver)
         with open(filename, 'w') as w:
-            w.write(f'$TTL 3H\n' \
-                    f'@	IN SOA	@ ns1.ats. (\n' \
-                    f'					{version}	; serial\n' \
-                    f'					1D	; refresh\n' \
-                    f'					1H	; retry\n' \
-                    f'					1W	; expire\n' \
-                    f'					3H )	; minimum\n' \
-                    f'@		IN	NS	ns1.ats.\n' \
+            w.write(f'$TTL 3H\n'
+                    f'@	IN SOA	@ ns1.ats. (\n'
+                    f'					{version}	; serial\n'
+                    f'					1D	; refresh\n'
+                    f'					1H	; retry\n'
+                    f'					1W	; expire\n'
+                    f'					3H )	; minimum\n'
+                    f'@		IN	NS	ns1.ats.\n'
                     f')\n')
-            for host, name in host_dict[zone]:
+            line = list(host_dict[zone])
+            line.sort(key = lambda x: int(x[0]))
+            for host, name in line:
                 w.write(f'{host}	IN	PTR	{name + "."}\n')
-
 
 
 if __name__ == '__main__':
