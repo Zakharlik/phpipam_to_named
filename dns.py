@@ -9,6 +9,9 @@ data_dir = 'data'
 zones_dir = 'zones'
 out_dir = 'zones'
 conf_dir = 'data'
+# todo: Make near real file structure
+
+# TODO: Make forward zone
 
 def push_dict(host_dict, net, host, name):
     if host_dict.get(net) != None:
@@ -51,6 +54,8 @@ def get_zones(host_dict, dir):
 
 
 def get_csv(host_dict):
+    # TODO: make check for non latin characters
+
     with open('data/allip.csv', 'r', encoding='cp1251') as r:
         for line in r:
             net, host, _, _, name, *_ = line.split(';')
