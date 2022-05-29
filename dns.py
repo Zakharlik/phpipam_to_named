@@ -55,6 +55,7 @@ def get_zones(host_dict, dir):
 
 def get_csv(host_dict):
     # TODO: make check for non latin characters
+    # TODO: make check for bad characters such as / _ ( etc.
 
     with open('data/allip.csv', 'r', encoding='cp1251') as r:
         for line in r:
@@ -86,8 +87,7 @@ def make_zones(host_dict):
                     f'					1H	; retry\n'
                     f'					1W	; expire\n'
                     f'					3H )	; minimum\n'
-                    f'@		IN	NS	ns1.ats.\n'
-                    f')\n')
+                    f'@		IN	NS	ns1.ats.\n\n')
             line = list(host_dict[zone])
             line.sort(key = lambda x: int(x[0]))
             for host, name in line:
@@ -105,9 +105,22 @@ def make_reverse_conf(conf_dir, rzones_dir):
                     f'        file "reverse/{filename}";\n'
                     f'}};\n\n')
 
+def make_reverse_conf_secondary(conf_dir, rzones_dir):
+    files = os.listdir(rzones_dir)
+    with open(os.path.join(conf_dir, 'slaves'), 'w') as w:
+        for filename in files:
+            print(filename)
+            reverse_name = '.'.join(reversed(filename.split('.')[:3]))
+            w.write(f'zone "{reverse_name}.in-addr.arpa" {{\n'
+                    f'        type slave;\n'
+                    f'        masters {{ 10.40.1.9; }};\n'
+                    f'        file "slaves/{filename}";\n'
+                    f'}};\n\n')
+
 if __name__ == '__main__':
     host_dict = get_zones(host_dict, zones_dir)
     host_dict = get_csv(host_dict)
 
     make_zones(host_dict)
     make_reverse_conf(conf_dir, zones_dir)
+    make_reverse_conf_secondary(conf_dir, zones_dir)
