@@ -3,15 +3,11 @@ import os
 import re
 import datetime
 
+from setup import *
+
+
 host_dict = {}
 
-cvs_file = 'data/allip.csv'
-zones_dir = 'data/zones'
-reverse_zones_dir = 'data/zones/reverse'
-conf_dir = 'data/config'
-
-
-# todo: Make near real file structure
 
 # TODO: Make forward zone
 
@@ -27,11 +23,12 @@ def get_reverse_zones(host_dict, dir):
     files = os.listdir(dir)
     for file in files:
         if re.search(r"^\d.*\.zone$", file):
-            net = re.search(r'\\(\S*)\.zone', file).group(1)
+            net = re.search(r'(\S*)\.zone', file).group(1)
             with open(os.path.join(dir,file),'r') as f:
                 for line in f:
                     if re.search('^\d',line):
                         host, _, _, name = line.split()
+                        name = re.sub(r'[^a-zA-Z0-9\.\-]', '-', name)
                         host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
@@ -52,12 +49,15 @@ def get_zones(host_dict, dir):
 
 
 def get_csv(host_dict):
-    # TODO: make check for non latin characters
-    # TODO: make check for bad characters such as / _ ( etc.
+    # TODO: check for bad character _?
 
     with open(cvs_file, 'r', encoding='cp1251') as r:
         for line in r:
             net, host, _, _, name, *_ = line.split(';')
+            if re.search(r'[^a-zA-Z0-9\.\-\_]', name):
+                print(net, host, name)
+                name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
+
             host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
@@ -96,7 +96,6 @@ def make_reverse_conf(conf_dir, rzones_dir):
     files = os.listdir(rzones_dir)
     with open(os.path.join(conf_dir, 'reverse'), 'w') as w:
         for filename in files:
-            print(filename)
             reverse_name = '.'.join(reversed(filename.split('.')[:3]))
             w.write(f'zone "{reverse_name}.in-addr.arpa" {{\n'
                     f'        type master;\n'
@@ -107,7 +106,6 @@ def make_reverse_conf_secondary(conf_dir, rzones_dir):
     files = os.listdir(rzones_dir)
     with open(os.path.join(conf_dir, 'slaves'), 'w') as w:
         for filename in files:
-            print(filename)
             reverse_name = '.'.join(reversed(filename.split('.')[:3]))
             w.write(f'zone "{reverse_name}.in-addr.arpa" {{\n'
                     f'        type slave;\n'
