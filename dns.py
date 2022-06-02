@@ -10,6 +10,7 @@ host_dict = {}
 
 
 # TODO: Make forward zone
+# TODO: Process unprepared cvs
 
 def push_dict(host_dict, net, host, name):
     if host_dict.get(net) != None:
@@ -47,18 +48,40 @@ def get_zones(host_dict, dir):
                         host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
+def get_phpipam_cvs(host_dict):
+    """
+    Look for freshest csv file exported from phpipam and add it to host_dict
+
+    :param host_dict:
+    :return host_dict:
+    """
+    files = os.listdir(cvs_dir)
+    date = ''
+    netl = ['','','','']
+    for file in files:
+        if file.startswith('phpipam_IP_adress_export'):
+            date = max(date, file.split('.')[0].split('_')[-1])
+    if date != '':
+        filename = cvs_dir+'/phpipam_IP_adress_export_'+date+'.csv'
+        with open(filename, 'r') as r:
+            for line in r:
+                if re.search(r'^(\d+\.){3}\d+;;;[a-zA-Z0-9\.\-\_]', line):
+                    ip, _, _ , _, name, *_ = line.split(';')
+                    netl[0], netl[1], netl[2], host = ip.split('.')
+                    net = '.'.join(netl)
+                    host_dict = push_dict(host_dict, net, host, name)
+
 
 def get_csv(host_dict):
     # TODO: check for bad character _?
 
-    with open(cvs_file, 'r', encoding='cp1251') as r:
-        for line in r:
-            net, host, _, _, name, *_ = line.split(';')
-            if re.search(r'[^a-zA-Z0-9\.\-\_]', name):
-                print(net, host, name)
-                name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
-
-            host_dict = push_dict(host_dict, net, host, name)
+    if os.path.isfile(cvs_file):
+        with open(cvs_file, 'r', encoding='cp1251') as r:
+            for line in r:
+                net, host, _, _, name, *_ = line.split(';')
+                if re.search(r'[^a-zA-Z0-9\.\-\_]', name):
+                    name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
+                host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
 
@@ -118,6 +141,8 @@ if __name__ == '__main__':
     host_dict = get_zones(host_dict, zones_dir)
 
     host_dict = get_csv(host_dict)
+
+    get_phpipam_cvs(host_dict)
 
     make_zones(host_dict)
     make_reverse_conf(conf_dir, reverse_zones_dir)
