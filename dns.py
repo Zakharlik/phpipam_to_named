@@ -9,12 +9,14 @@ from setup import *
 host_dict = {}
 
 
+# TODO: Refactor all for dict of list of dicts. Not list of tuples
 # TODO: Make forward zone
 # TODO: Process unprepared cvs
 
 def push_dict(host_dict, net, host, name):
     if re.search(r'[^a-zA-Z0-9\.\-\_]', name):
         name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
+    name = re.sub(r'[\-]+$', '', name)
     if host_dict.get(net) != None:
         host_dict[net].add((host, name.strip('.')))
     else:
@@ -110,7 +112,7 @@ def make_zones(host_dict):
                     f'					3H )	; minimum\n'
                     f'@		IN	NS	ns1.ats.\n\n')
             line = list(host_dict[zone])
-            line.sort(key = lambda x: int(x[0]))
+            line.sort(key=lambda x: int(x[0]))
             for host, name in line:
                 w.write(f'{host}	IN	PTR	{name + "."}\n')
 
