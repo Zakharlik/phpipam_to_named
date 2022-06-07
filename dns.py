@@ -64,13 +64,13 @@ def get_phpipam_cvs(host_dict):
     date = ''
     netl = ['','','']
     for file in files:
-        if file.startswith('phpipam_IP_adress_export'):
+        if file.startswith('phpipam_IP_adress_export') and file.endswith('csv'):
             date = max(date, file.split('.')[0].split('_')[-1])
     if date != '':
         filename = cvs_dir+'/phpipam_IP_adress_export_'+date+'.csv'
         with open(filename, 'r', encoding='cp1251') as r:
             for line in r:
-                if re.search(r'^(\d+\.){3}\d+'+delimiter*3+'[a-zA-Z0-9\.\-\_]', line):
+                if re.search(r'^(\d+\.){3}\d+('+delimiter+'.*){2}'+delimiter+'[a-zA-Z0-9\.\-\_]', line):
                     ip, _, _ , name, *_ = line.split(delimiter)
                     netl[0], netl[1], netl[2], host = ip.split('.')
                     net = '.'.join(netl)
