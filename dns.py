@@ -18,9 +18,11 @@ def push_dict(host_dict, net, host, name):
         name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
     name = re.sub(r'[\-]+$', '', name)
     if host_dict.get(net) != None:
-        host_dict[net].add((host, name.strip('.')))
+        host_dict[net][host] = name.strip('.')
     else:
-        host_dict[net] = {(host, name.strip('.'))}
+        host_rec = {host: name.strip('.')}
+        host_dict[net] = {}
+        host_dict[net][host] = name.strip('.')
     return host_dict
 
 
@@ -111,10 +113,9 @@ def make_zones(host_dict):
                     f'					1W	; expire\n'
                     f'					3H )	; minimum\n'
                     f'@		IN	NS	ns1.ats.\n\n')
-            line = list(host_dict[zone])
-            line.sort(key=lambda x: int(x[0]))
-            for host, name in line:
-                w.write(f'{host}	IN	PTR	{name + "."}\n')
+            hosts = sorted(list(host_dict[zone]))
+            for host in hosts:
+                w.write(f'{host}	IN	PTR	{host_dict[zone][host] + "."}\n')
 
 
 def make_reverse_conf(conf_dir, rzones_dir):
