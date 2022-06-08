@@ -9,13 +9,11 @@ from setup import *
 host_dict = {}
 
 
-# TODO: Refactor all for dict of list of dicts. Not list of tuples
 # TODO: Make forward zone
-# TODO: Process unprepared cvs
 
 def push_dict(host_dict, net, host, name):
-    if re.search(r'[^a-zA-Z0-9\.\-\_]', name):
-        name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
+    if re.search(r'[^a-zA-Z0-9\.\-]', name):
+        name = re.sub(r'[^a-zA-Z0-9\.\-]', '-', name)
     name = re.sub(r'[\-]+$', '', name)
     if host_dict.get(net) != None:
         host_dict[net][host] = name.strip('.')
@@ -79,7 +77,6 @@ def get_phpipam_cvs(host_dict):
 
 
 def get_csv(host_dict):
-    # TODO: check for bad character _?
 
     if os.path.isfile(cvs_file):
         with open(cvs_file, 'r', encoding='cp1251') as r:
