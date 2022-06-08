@@ -4,3 +4,4 @@ reverse_zones_dir = 'data/zones/reverse'  # Reverse zones. Usually /var/named/re
 conf_dir = 'data/config'  # Config files directory. Usually /etc/named/
 cvs_dir = 'data'  # Phpipam files
 delimiter = ';'  # Delimiter used in CSV file
+forward_zone_name = 'ats.zone'  # Forward zone file to modify. Usually in /var/named
