@@ -9,13 +9,13 @@ from setup import *
 host_dict = {}
 
 
-# TODO: Refactor all for dict of list of dicts. Not list of tuples
 # TODO: Make forward zone
-# TODO: Process unprepared cvs
+# ToDo: Move nameserver attributes to setup
+# ToDo: Move zone attributes to setup
 
 def push_dict(host_dict, net, host, name):
-    if re.search(r'[^a-zA-Z0-9\.\-\_]', name):
-        name = re.sub(r'[^a-zA-Z0-9\.\-\_]', '-', name)
+    if re.search(r'[^a-zA-Z0-9\.\-]', name):
+        name = re.sub(r'[^a-zA-Z0-9\.\-]', '-', name)
     name = re.sub(r'[\-]+$', '', name)
     if host_dict.get(net) != None:
         host_dict[net][host] = name.strip('.')
@@ -79,7 +79,6 @@ def get_phpipam_cvs(host_dict):
 
 
 def get_csv(host_dict):
-    # TODO: check for bad character _?
 
     if os.path.isfile(cvs_file):
         with open(cvs_file, 'r', encoding='cp1251') as r:
@@ -139,6 +138,43 @@ def make_reverse_conf_secondary(conf_dir, rzones_dir):
                     f'        file "slaves/{filename}";\n'
                     f'}};\n\n')
 
+
+def get_forward_zone(forward_dict):
+    with open(os.path.join(zones_dir, forward_zone_name), 'r', encoding='cp1251') as f:
+        for line in f:
+            if re.search('^\w*\s+IN\s+A\s+(\d+\.){3}\d+', line):
+                name, _, _, ip = line.split()
+                forward_dict[name] = ip
+    return forward_dict
+
+
+def make_forward_dict(host_dict):
+    forward_dict = {}
+    for zone in host_dict:
+        for host in host_dict[zone]:
+            forward_dict[host_dict[zone][host]] = zone+'.'+host
+
+    return get_forward_zone(forward_dict)
+
+
+def write_forward_zone(forward_dict):
+    head = ''
+    with open(os.path.join(zones_dir, forward_zone_name), 'r', encoding='cp1251') as f:
+        for line in f:
+            if not re.search('^\w*\s+IN\s+A\s+(\d+\.){3}\d+', line):
+                head += line
+            else:
+                break
+
+    with open(os.path.join(zones_dir, forward_zone_name), 'w', encoding='cp1251') as w:
+        w.write(head)
+        for host, ip in forward_dict.items():
+            w.write(f'{host}    IN  A   {ip}\n')
+
+
+
+
+
 if __name__ == '__main__':
     host_dict = get_reverse_zones(host_dict, reverse_zones_dir)
     host_dict = get_zones(host_dict, zones_dir)
@@ -148,3 +184,5 @@ if __name__ == '__main__':
     make_zones(host_dict)
     make_reverse_conf(conf_dir, reverse_zones_dir)
     make_reverse_conf_secondary(conf_dir, reverse_zones_dir)
+
+    write_forward_zone(make_forward_dict(host_dict))
