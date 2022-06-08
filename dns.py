@@ -87,6 +87,19 @@ def get_csv(host_dict):
                 host_dict = push_dict(host_dict, net, host, name)
     return host_dict
 
+# ToDo: Complete it, and use it.
+# How to separate head and body?
+# Body regexp as argument?
+
+def get_zone_file_head(filename):
+    head = ''
+    with open(filename, 'r', encoding='cp1251') as f:
+        for line in f:
+            if not re.search(r'^\w*\s+IN\s+A\s+(\d+\.){3}\d+', line):
+                head += line
+            else:
+                break
+
 
 def make_zones(host_dict):
     for zone in host_dict:
@@ -161,15 +174,25 @@ def write_forward_zone(forward_dict):
     head = ''
     with open(os.path.join(zones_dir, forward_zone_name), 'r', encoding='cp1251') as f:
         for line in f:
-            if not re.search('^\w*\s+IN\s+A\s+(\d+\.){3}\d+', line):
+            if 'serial' in line:
+                version = re.search(r'(\d+).*serial', line)
+                version = version.group(1)
+                if version[:8] == datetime.datetime.now().strftime('%Y%m%d'):
+                    ver = int(version[8:]) + 1
+                else:
+                    ver = 1
+                version = '{}{:0>2}'.format(datetime.datetime.now().strftime('%Y%m%d'), ver)
+                line = f'                   {version}   ; serial'
+
+            if not re.search('^\S*\s+IN\s+A\s+(\d+\.){3}\d+', line):
                 head += line
             else:
                 break
 
     with open(os.path.join(zones_dir, forward_zone_name), 'w', encoding='cp1251') as w:
         w.write(head)
-        for host, ip in forward_dict.items():
-            w.write(f'{host}    IN  A   {ip}\n')
+        for host in sorted(forward_dict):
+            w.write(f'{host}    IN  A   {forward_dict[host]}\n')
 
 
 
