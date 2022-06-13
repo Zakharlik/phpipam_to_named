@@ -11,7 +11,7 @@ Before first run please check setup.py file. Py default it point to real bind fi
 
 In phpIPAM:
 Go to Administration / "Import / Export"
-Пресс "Prepare XLS dump"
+Press "Prepare XLS dump"
 Open downloaded file
 Save file as CSV file. Do not rename file. Only change extension.
 Delimeter can be changed in setup.py. By default is semicolon (;).
