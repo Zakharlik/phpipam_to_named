@@ -118,13 +118,13 @@ def make_zones(host_dict):
         version = '{}{:0>2}'.format(datetime.datetime.now().strftime('%Y%m%d'), ver)
         with open(filename, 'w') as w:
             w.write(f'$TTL 3H\n'
-                    f'@	IN SOA	@ ns1.ats. (\n'
+                    f'@	IN SOA	@ ns1.{master_zone}. (\n'
                     f'					{version}	; serial\n'
                     f'					1D	; refresh\n'
                     f'					1H	; retry\n'
                     f'					1W	; expire\n'
                     f'					3H )	; minimum\n'
-                    f'@		IN	NS	ns1.ats.\n\n')
+                    f'@		IN	NS	ns1.{master_zone}.\n\n')
             hosts = sorted(list(host_dict[zone]))
             for host in hosts:
                 w.write(f'{host}	IN	PTR	{host_dict[zone][host] + "."}\n')
@@ -147,7 +147,7 @@ def make_reverse_conf_secondary(conf_dir, rzones_dir):
             reverse_name = '.'.join(reversed(filename.split('.')[:3]))
             w.write(f'zone "{reverse_name}.in-addr.arpa" {{\n'
                     f'        type slave;\n'
-                    f'        masters {{ 10.40.1.9; }};\n'
+                    f'        masters {{ {master_ip}; }};\n'
                     f'        file "slaves/{filename}";\n'
                     f'}};\n\n')
 

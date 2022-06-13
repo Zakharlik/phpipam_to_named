@@ -1,0 +1,16 @@
+###
+# Setup.py - config file
+
+# Master zone. Name of forward zone.
+master_zone = 'my_zone'
+
+# IP address of master DNS. Need by config for slave DNS
+master_ip = '192.168.1.1'
+
+cvs_file = 'data/allip.csv'  # Filtered CVS file in format <zone>;<last_octet>;IN;PTR;<hostname>;[any_other_fields]
+zones_dir = '/var/named'  # Named zones. Usually /var/named
+reverse_zones_dir = '/var/named/reverse'  # Reverse zones. Usually /var/named/reverse
+conf_dir = '/etc/named'  # Config files directory. Usually /etc/named/
+cvs_dir = 'data'  # Phpipam files
+delimiter = ';'  # Delimiter used in CSV file
+forward_zone_name = 'my.zone'  # Forward zone file to modify in /var/named
